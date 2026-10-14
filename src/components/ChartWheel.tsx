@@ -1,9 +1,10 @@
 import { ZODIAC_SIGNS } from "../astro/zodiac";
-import type { ZodiacSign } from "../astro/types";
+import type { ChartResult, ZodiacSign } from "../astro/types";
 const SIZE = 600;
 const CENTER = SIZE / 2;
 const OUTER_R = 280; // 星座環外圈
 const INNER_R = 230; // 星座環內圈
+const HOUSE_R = 70; // 中間的小圓
 
 // \uFE0E 讓符號顯示成文字，不會變成彩色 emoji
 const SIGN_SYMBOLS: Record<ZodiacSign, string> = {
@@ -29,13 +30,18 @@ function polarToXY(radius: number, angleDeg: number) {
     };
 }
 
-export default function ChartWheel() {
+type ChartWheelProps = {
+    chart: ChartResult;
+};
+
+export default function ChartWheel({ chart }: ChartWheelProps) {
     return (
         <svg viewBox={`0 0 ${SIZE} ${SIZE}`} width={500} height={500}>
             <circle cx={CENTER} cy={CENTER} r={OUTER_R} fill="none" stroke="white" />
             <circle cx={CENTER} cy={CENTER} r={INNER_R} fill="none" stroke="white" />
+            <circle cx={CENTER} cy={CENTER} r={HOUSE_R} fill="none" stroke="white" />
             {ZODIAC_SIGNS.map((sign, i) => {
-                const angle = i * 30;
+                const angle = i * 30 - chart.ascendant;
                 const start = polarToXY(INNER_R, angle);
                 const end = polarToXY(OUTER_R, angle);
                 const label = polarToXY((OUTER_R + INNER_R) / 2, angle + 15); // 格子中間
@@ -52,6 +58,22 @@ export default function ChartWheel() {
                             {SIGN_SYMBOLS[sign]}
                         </text>
                     </g>
+                );
+            })}
+            {chart.houseCusps.map((cusp, i) => {
+                const angle = cusp - chart.ascendant;
+                const start = polarToXY(INNER_R, angle);
+                const end = polarToXY(HOUSE_R, angle);
+                return (
+                    <line
+                        key={`house-${i + 1}`}
+                        x1={start.x}
+                        y1={start.y}
+                        x2={end.x}
+                        y2={end.y}
+                        stroke="white"
+                        strokeWidth={i % 3 === 0 ? 2 : 0.5}
+                    />
                 );
             })}
         </svg>
